@@ -16,6 +16,8 @@ import os
 import yaml
 import jinja2
 import sys
+import os.path
+import fileinput
 
 
 class JCopyException(Exception):
@@ -29,20 +31,26 @@ class JCopy(object):
     def write(self, input, output_stream):
         # verify the answers file exists and read it
         answers = self.answers
-        if not os.path.exists(answers):
-            raise JCopyException("%s does not exist" % answers)
-        answer_data = open(answers).read()
+        inexistent = filter(lambda f: not os.path.exists(f), answers)
+        if len(inexistent) > 0:
+            raise JCopyException("Answer files: %s does not exist" % ", ".join(inexistent))
+
+
+        answer_data = {}
         try:
-            answer_data = yaml.load(answer_data)
+            for fn in answers:
+                with open(fn) as answer:
+                    ad = yaml.load(answer)
+                    if not type(ad) == dict:
+                        raise JCopyException("expecting %s to describe a YAML dictionary, got %s" % (fn, type(ad)))
+                    answer_data.update(ad)
         except Exception, e:
             raise JCopyException(str(e))
 
-        if not type(answer_data) == dict:
-            raise JCopyException("expecting %s to describe a YAML dictionary" % answers)
 
         # verify the input file exists
         if not os.path.exists(input):
-            raise JCopyException("%s does not exist" % input)
+            raise JCopyException("Input file %s does not exist" % input)
 
             # prep the template engine
         loader = jinja2.FileSystemLoader(searchpath="/")
