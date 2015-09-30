@@ -31,9 +31,9 @@ class JCopy(object):
     def write(self, input, output_stream):
         # verify the answers file exists and read it
         answers = self.answers
-        inexistent = filter(lambda f: not os.path.exists(f), answers)
-        if len(inexistent) > 0:
-            raise JCopyException("Answer files: %s does not exist" % ", ".join(inexistent))
+        nonexistant = [ filename for filename in answers if not os.path.exists(filename) ]
+        if len(nonexistant) > 0:
+            raise JCopyException("One or more answer files do not exist: %s" % ", ".join(nonexistant))
 
 
         answer_data = {}
@@ -42,7 +42,7 @@ class JCopy(object):
                 with open(fn) as answer:
                     ad = yaml.load(answer)
                     if not type(ad) == dict:
-                        raise JCopyException("expecting %s to describe a YAML dictionary, got %s" % (fn, type(ad)))
+                        raise JCopyException("Expecting %s to describe a YAML dictionary, got %s" % (fn, type(ad)))
                     answer_data.update(ad)
         except Exception, e:
             raise JCopyException(str(e))
